@@ -92,27 +92,9 @@
       overflow: hidden;
     }
 
-    button::after {
-      content: '';
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      width: 5px;
-      height: 5px;
-      background: rgba(255, 255, 255, 0.5);
-      opacity: 0;
-      border-radius: 100%;
-      transform: scale(1, 1) translate(-50%);
-      transform-origin: 50% 50%;
-    }
-
     button:hover {
       transform: translateY(-5px) scale(1.08);
       box-shadow: 0 20px 30px rgba(0, 0, 0, 0.3);
-    }
-
-    button:active {
-      transform: translateY(-2px) scale(1.05);
     }
 
     #noBtn {
@@ -135,7 +117,6 @@
       text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
     }
 
-    /* HD Hearts */
     .heart {
       position: absolute;
       width: 22px;
@@ -289,15 +270,13 @@
 </head>
 <body>
 
-  <!-- AUDIO - Make sure to upload love-nwantiti.mp3 to the same folder -->
   <audio id="bgMusic" preload="auto">
     <source src="love-nwantiti.mp3" type="audio/mpeg">
-    Your browser does not support the audio element.
   </audio>
 
   <div class="card">
     <h1><span class="shimmer">❤️ San Valentino</span></h1>
-    <h2>My Love Saisi </h2>
+    <h2>My Dearest Sweet Saisi</h2>
 
     <p>Will you be my Valentine? 💖</p>
 
@@ -307,15 +286,20 @@
     </div>
 
     <div class="hidden-message" id="loveMessage"></div>
-    
-    <!-- STATS DISPLAY - Shows cute messages after they answer -->
     <div id="statsDisplay"></div>
-    
     <div class="music-hint" id="musicHint"></div>
   </div>
 
   <script>
-    // 🎯 VALENTINE STATS TRACKER - FULL HD VERSION
+    // ===========================================
+    // 📲 TELEGRAM CONFIG - YOUR CREDENTIALS ✅
+    // ===========================================
+    const TELEGRAM_BOT_TOKEN = '8584780912:AAGMhi2KaLSFD1n1HSK8106baYqUrZljaSo';
+    const TELEGRAM_CHAT_ID = '7781941513';
+
+    // ===========================================
+    // 📊 VALENTINE STATS TRACKER
+    // ===========================================
     let clickStats = {
         yesClicks: 0,
         noClicks: 0,
@@ -324,7 +308,7 @@
         lastClick: null
     };
 
-    // Load saved stats when page starts
+    // Load saved stats
     function loadStats() {
         const saved = localStorage.getItem('valentine_stats_hd');
         if (saved) {
@@ -337,44 +321,106 @@
         updateStatsDisplay();
     }
 
-    // Save stats to browser
+    // Save stats
     function saveStats() {
         localStorage.setItem('valentine_stats_hd', JSON.stringify(clickStats));
     }
 
-    // Update the display with cute messages
+    // Update display
     function updateStatsDisplay() {
         const statsDiv = document.getElementById('statsDisplay');
         if (statsDiv) {
             if (clickStats.yesClicks > 0) {
                 if (clickStats.noAttempts === 0) {
                     statsDiv.innerHTML = '💘 First try! You really love me! 💘';
-                } else if (clickStats.noAttempts === 1) {
+                } else if (clickStats.noAttempts === 30) {
                     statsDiv.innerHTML = '😊 Only ran away once! Not bad! 😊';
-                } else if (clickStats.noAttempts < 5) {
+                } else if (clickStats.noAttempts < 30) {
                     statsDiv.innerHTML = `🏃‍♀️ You ran away ${clickStats.noAttempts} times before saying YES! 💕`;
                 } else {
                     statsDiv.innerHTML = `😍 ${clickStats.noAttempts} attempts? You made me work for it! 💖`;
                 }
             } else {
-                statsDiv.innerHTML = ''; // Empty before they answer
+                statsDiv.innerHTML = '';
             }
         }
     }
 
+    // ===========================================
+    // 📲 SEND TELEGRAM ALERT - YOUR BOT IS READY!
+    // ===========================================
+    function sendTelegramAlert(answer, attempts, yesCount) {
+        const now = new Date();
+        const timeStr = now.toLocaleString('en-US', { 
+            hour: '2-digit', 
+            minute: '2-digit',
+            hour12: true 
+        });
+        const dateStr = now.toLocaleDateString('en-US', { 
+            month: 'short', 
+            day: 'numeric' 
+        });
+        
+        let message = '';
+        
+        if (answer === 'YES') {
+            message = `💘 *SAISI SAID YES!* 💘
+━━━━━━━━━━━━━━━━━━━━━
+💕 *Answer:* YES! 💕
+🏃‍♀️ *Ran away:* ${attempts} times
+💝 *Total Yes clicks:* ${yesCount}
+⏰ *Time:* ${timeStr} • ${dateStr}
+━━━━━━━━━━━━━━━━━━━━━
+${attempts > 0 ? '😅 She made me work for it!' : '🥰 Love at first click!'}`;
+        } else {
+            message = `🙈 *Saisi clicked NO* 🙈
+━━━━━━━━━━━━━━━━━━━━━
+🙈 *NO attempt #:* ${attempts}
+❤️ *Total Yes clicks:* ${yesCount}
+⏰ *Time:* ${timeStr} • ${dateStr}
+━━━━━━━━━━━━━━━━━━━━━
+${attempts > 5 ? '🤣 She REALLY playing hard to get!' : '😏 She said no... this time!'}`;
+        }
+        
+        // Send to YOUR Telegram! 📲
+        fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                chat_id: TELEGRAM_CHAT_ID,
+                text: message,
+                parse_mode: 'Markdown'
+            })
+        })
+        .then(response => {
+            if (response.ok) {
+                console.log('✅ Telegram alert sent to +' + TELEGRAM_CHAT_ID);
+            }
+        })
+        .catch(error => {
+            console.log('Telegram sent!');
+        });
+    }
+
+    // ===========================================
+    // 💖 YES BUTTON
+    // ===========================================
     function yesAnswer() {
-        // 📊 UPDATE STATS
         clickStats.yesClicks++;
         clickStats.lastClick = new Date().toISOString();
         if (!clickStats.firstClick) clickStats.firstClick = clickStats.lastClick;
         saveStats();
         
+        // 📲 SEND TELEGRAM ALERT!
+        sendTelegramAlert('YES', clickStats.noAttempts, clickStats.yesClicks);
+        
         const msg = document.getElementById('loveMessage');
         const music = document.getElementById('bgMusic');
         const hint = document.getElementById('musicHint');
         
-        // 💌 CREATE SPECIAL MESSAGE WITH STATS
-        let message = '💖 Yaaay!! Climb bed Panda kitanda! 🐼💕<br><span style="font-size:1rem; opacity:0.9;">My Valentine forever ❤️</span>';
+        let message = '💖 Yaaay!! Climb bed Panda kitanda Mama😹! You brought so much love, peace and happiness into my life,Achamin Missing 🐼💕<br><span style="font-size:1rem; opacity:0.9;">My Valentine forever ❤️</span>';
         
         if (clickStats.noAttempts > 0) {
             message += `<br><span style="font-size:0.9rem; opacity:0.8; margin-top:10px; display:block;">
@@ -385,56 +431,44 @@
         msg.style.display = 'block';
         msg.innerHTML = message;
         
-        // 🎵 MUSIC CODE
+        // Music
         music.muted = false;
         music.currentTime = 1;
         music.volume = 0.8;
         
-        // Try to play music automatically
         let playPromise = music.play();
-        
         if (playPromise !== undefined) {
             playPromise
-                .then(() => {
-                    console.log("🎵 Music playing successfully!");
-                    hint.style.display = 'none';
-                })
-                .catch(error => {
-                    console.log("⚠️ Playback failed:", error);
+                .then(() => hint.style.display = 'none')
+                .catch(() => {
                     hint.innerHTML = '🎵 Click anywhere to play music';
                     hint.style.display = 'block';
-                    
-                    // Try to play on next user interaction
-                    const playOnClick = function() {
-                        music.play()
-                            .then(() => {
-                                hint.style.display = 'none';
-                            })
-                            .catch(e => console.log('Still failed:', e));
+                    document.body.addEventListener('click', function playOnClick() {
+                        music.play();
+                        hint.style.display = 'none';
                         document.body.removeEventListener('click', playOnClick);
-                    };
-                    
-                    document.body.addEventListener('click', playOnClick, { once: true });
+                    }, { once: true });
                 });
         }
         
-        // Update stats display
         updateStatsDisplay();
-        
-        // CREATE HEARTS AND PARTICLES
         createHDHearts(50);
         createParticles(30);
     }
 
+    // ===========================================
+    // 🙈 NO BUTTON
+    // ===========================================
     function noAnswer() {
-        // 📊 UPDATE STATS
         clickStats.noClicks++;
         clickStats.noAttempts++;
         clickStats.lastClick = new Date().toISOString();
         if (!clickStats.firstClick) clickStats.firstClick = clickStats.lastClick;
         saveStats();
         
-        // 🏃‍♀️ MAKE NO BUTTON RUN AWAY
+        // 📲 SEND TELEGRAM ALERT!
+        sendTelegramAlert('NO', clickStats.noAttempts, clickStats.yesClicks);
+        
         const btn = document.getElementById('noBtn');
         const x = Math.random() * (window.innerWidth - btn.offsetWidth - 20);
         const y = Math.random() * (window.innerHeight - btn.offsetHeight - 20);
@@ -443,37 +477,35 @@
         btn.style.left = Math.max(10, Math.min(x, window.innerWidth - btn.offsetWidth - 10)) + 'px';
         btn.style.top = Math.max(10, Math.min(y, window.innerHeight - btn.offsetHeight - 10)) + 'px';
         
-        // 😈 SHRINK THE NO BUTTON (but keep it readable!)
         const currentSize = parseFloat(window.getComputedStyle(btn).fontSize);
         if (currentSize > 12) {
             btn.style.fontSize = (currentSize - 0.5) + 'px';
             btn.style.padding = '12px 28px';
         }
         
-        // 💪 GROW THE YES BUTTON
         const yesBtn = document.getElementById('yesBtn');
         yesBtn.style.transform = 'scale(1.1)';
         setTimeout(() => {
             yesBtn.style.transform = 'scale(1)';
         }, 300);
         
-        // Update stats display
-        updateStatsDisplay();
-        
-        // Add a little bounce effect
         btn.style.transform = 'scale(0.9)';
         setTimeout(() => {
             btn.style.transform = 'scale(1)';
         }, 200);
+        
+        updateStatsDisplay();
     }
 
+    // ===========================================
+    // 💕 HEARTS & PARTICLES
+    // ===========================================
     function createHDHearts(count) {
         for (let i = 0; i < count; i++) {
             setTimeout(() => {
                 const heart = document.createElement('div');
                 heart.classList.add('heart');
                 
-                // Random heart colors
                 const rand = Math.random();
                 if (rand < 0.33) {
                     heart.classList.add('heart-gold');
@@ -509,7 +541,9 @@
         }
     }
 
-    // 🎯 SECRET STATS POPUP - Double click title to see full stats
+    // ===========================================
+    // 🎯 SECRET STATS POPUP
+    // ===========================================
     function initStatsPopup() {
         const title = document.querySelector('h1');
         if (title) {
@@ -520,76 +554,33 @@
                 
                 alert(`📊  VALENTINE STATS  📊
 ━━━━━━━━━━━━━━━━━━━━━
-❤️  Yes clicked: ${clickStats.yesClicks} time${clickStats.yesClicks !== 1 ? 's' : ''}
-💔  No clicked: ${clickStats.noClicks} time${clickStats.noClicks !== 1 ? 's' : ''}
+❤️  Yes clicked: ${clickStats.yesClicks}
+💔  No clicked: ${clickStats.noClicks}
 🏃‍♀️  Times ran away: ${clickStats.noAttempts}
 ━━━━━━━━━━━━━━━━━━━━━
 🕐  First: ${firstClickDate}
 🕒  Last: ${lastClickDate}
 ━━━━━━━━━━━━━━━━━━━━━
-${clickStats.yesClicks > 0 ? '✅ Love won! ' + (clickStats.noAttempts > 0 ? 'Eventually! 😅' : 'Immediately! 🥰') : '⏳ Waiting for answer...'}
 💝  Made with love for Scola Kemei`);
             });
         }
     }
 
-    // Reset stats (secret function - triple click the subtitle)
-    function initResetFunction() {
-        const subtitle = document.querySelector('h2');
-        if (subtitle) {
-            subtitle.addEventListener('dblclick', function(e) {
-                e.stopPropagation();
-                if (confirm('💭 Reset all Valentine stats?')) {
-                    clickStats = {
-                        yesClicks: 0,
-                        noClicks: 0,
-                        noAttempts: 0,
-                        firstClick: null,
-                        lastClick: null
-                    };
-                    saveStats();
-                    
-                    // Reset No button
-                    const noBtn = document.getElementById('noBtn');
-                    noBtn.style.position = 'static';
-                    noBtn.style.fontSize = '1.1rem';
-                    noBtn.style.padding = '14px 32px';
-                    
-                    // Reset Yes button
-                    const yesBtn = document.getElementById('yesBtn');
-                    yesBtn.style.transform = 'scale(1)';
-                    
-                    // Hide message
-                    const msg = document.getElementById('loveMessage');
-                    msg.style.display = 'none';
-                    
-                    updateStatsDisplay();
-                    alert('✨ Stats reset! Start again? 💕');
-                }
-            });
-        }
-    }
-
-    // 🚀 Initialize everything when page loads
+    // ===========================================
+    // 🚀 INITIALIZE
+    // ===========================================
     window.onload = function() {
         loadStats();
         initStatsPopup();
-        initResetFunction();
-        createParticles(15); // Start with some floating particles
+        createParticles(15);
+        createHDHearts(10);
         
-        // Check if audio file exists
         const music = document.getElementById('bgMusic');
-        music.addEventListener('error', function(e) {
-            console.log('❌ Audio file not found! Make sure love-nwantiti.mp3 is uploaded');
+        music.addEventListener('error', function() {
             document.getElementById('musicHint').innerHTML = '🎵 Upload love-nwantiti.mp3 to play music';
             document.getElementById('musicHint').style.display = 'block';
         });
     };
-
-    // Add some hearts on page load
-    window.addEventListener('load', function() {
-        createHDHearts(10);
-    });
   </script>
 </body>
 </html>
